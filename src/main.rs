@@ -14,9 +14,10 @@ use nwg::NativeUi;
 
 #[derive(Default, NwgUi)]
 pub struct App {
-    filenames: RefCell<Option<Vec<String>>>,
+    filenames_buffer: RefCell<Vec<String>>,
 
-    // loaded_image: RefCell<Option<nwg::Bitmap>>,
+    loaded_image: RefCell<Option<nwg::Bitmap>>,
+
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
     #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnResize: [App::size])]
@@ -88,7 +89,46 @@ impl App {
     fn exit(&self) {
         nwg::stop_thread_dispatch();
     }
+    //TODO(IMPORTANT): Something crashes it when I try to open a dir with no images
+    fn upate_img(&self) {
+        let paths = self.filenames_buffer.borrow();
+        let path = paths.get(0).expect("No filenames in buffer");
+        // nwg::modal_info_message(&self.window, "DebugInfo", format!("{}", path).as_str());
+        // Evil pattern matching
+        let image = match self.decoder.from_filename(path) {
+            Ok(img) => img,
+            Err(_) => {
+                nwg::modal_error_message(&self.window, "Error", "Could not read image!");
+                return;
+            }
+        };
 
+        println!("Frame count: {}", image.frame_count());
+        println!("Format: {:?}", image.container_format());
+
+        let frame = match image.frame(0) {
+            Ok(bmp) => bmp,
+            Err(_) => {
+                nwg::modal_error_message(&self.window, "Error", "Could not read image frame!");
+                return;
+            }
+        };
+
+        match frame.as_bitmap() {
+            Ok(bitmap) => {
+                let mut img = self.loaded_image.borrow_mut();
+                img.replace(bitmap);
+                self.img.set_bitmap(img.as_ref());
+            }
+            Err(_) => {
+                nwg::modal_error_message(
+                    &self.window,
+                    "Error",
+                    "Could not convert image to bitmap!",
+                );
+            }
+        }
+    }
     fn open_folder(&self, ctrl: &Button) {
         // See which text box to update with the new path
         let btn_text = ctrl.text();
@@ -131,19 +171,17 @@ impl App {
                     // Skips non files
                     entry.ok().and_then(|e| {
                         //Turns into string
-                        e.path()
-                            .file_name()
-                            .and_then(|n| n.to_str().map(|s| String::from(s)))
+                        e.path().as_os_str().to_str().map(|s| String::from(s))
                     })
                 })
                 .filter(|x| x.ends_with(".jpg") | x.ends_with(".jpeg") | x.ends_with(".png"))
-                .collect();
+                .collect::<Vec<String>>();
 
-            let mut paths_ref = self.filenames.borrow_mut();
-            paths_ref.replace(names);
+            self.filenames_buffer.replace(names);
+            self.upate_img()
         }
     }
-
+    //TODO: Yeah uh just for debug ok
     fn process_keypress(&self, data: &nwg::EventData) {
         if data.on_key() == nwg::keys::_A {
             nwg::modal_info_message(&self.window, "haha", "lol");
