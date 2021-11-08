@@ -20,7 +20,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnResize: [App::size])]
+    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -186,9 +186,6 @@ impl App {
         if data.on_key() == nwg::keys::_A {
             nwg::modal_info_message(&self.window, "haha", "lol");
         }
-    }
-    fn size(&self) {
-        self.grid.fit();
     }
 }
 fn main() {
