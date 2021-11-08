@@ -89,10 +89,16 @@ impl App {
     fn exit(&self) {
         nwg::stop_thread_dispatch();
     }
-    //TODO(IMPORTANT): Something crashes it when I try to open a dir with no images
+
     fn upate_img(&self) {
         let paths = self.filenames_buffer.borrow();
-        let path = paths.get(0).expect("No filenames in buffer");
+        let path = match paths.get(0) {
+            Some(path) => path,
+            None => {
+                nwg::modal_error_message(&self.window, "Error", "No images in folder");
+                return;
+            }
+        };
         // nwg::modal_info_message(&self.window, "DebugInfo", format!("{}", path).as_str());
         // Evil pattern matching
         let image = match self.decoder.from_filename(path) {
