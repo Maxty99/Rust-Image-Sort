@@ -20,7 +20,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
+    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnResizeEnd: [App::debug_command])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -109,9 +109,6 @@ impl App {
             }
         };
 
-        println!("Frame count: {}", image.frame_count());
-        println!("Format: {:?}", image.container_format());
-
         let frame = match image.frame(0) {
             Ok(bmp) => bmp,
             Err(_) => {
@@ -187,11 +184,21 @@ impl App {
             self.upate_img()
         }
     }
+
     //TODO: Yeah uh just for debug ok
     fn process_keypress(&self, data: &nwg::EventData) {
         if data.on_key() == nwg::keys::_A {
             nwg::modal_info_message(&self.window, "haha", "lol");
         }
+    }
+
+    //TODO: Yeah uh just for debug ok
+    fn debug_command(&self) {
+        nwg::modal_info_message(
+            &self.window,
+            "Debug",
+            format!("Frame size: {:?}", self.img.size()).as_str(),
+        );
     }
 }
 fn main() {
