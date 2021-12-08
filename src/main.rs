@@ -20,7 +20,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
+    #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -83,6 +83,12 @@ pub struct App {
     #[nwg_control(text: "", focus: false, readonly: true)]
     #[nwg_layout_item(layout: grid, col: 0, row: 14, col_span: 2)]
     cat_three_dir_text: nwg::TextInput,
+
+    #[nwg_control(text: "Open folder to load images")]
+    #[nwg_layout_item(layout: grid, col: 0, row: 15, col_span: 3)]
+    // Even though its not part of the grid I need to do this so it
+    // isnt drawn over by the category three button and textbox
+    status_bar: nwg::StatusBar,
 }
 
 impl App {
@@ -90,74 +96,93 @@ impl App {
         nwg::stop_thread_dispatch();
     }
 
+    fn set_min(&self, data: &nwg::EventData) {
+        let data = data.on_min_max();
+        data.set_min_size(600, 700);
+    }
+
+    fn update_img_count(&self) {
+        let paths = self.filenames_buffer.borrow();
+        self.status_bar
+            .set_text(1, format!("Images found: {}", paths.len()).as_str())
+    }
+
     fn upate_img(&self) {
         let paths = self.filenames_buffer.borrow();
-        let path = match paths.get(0) {
-            Some(path) => path,
-            None => {
-                nwg::modal_error_message(&self.window, "Error", "No images in folder");
-                return;
-            }
-        };
-        // nwg::modal_info_message(&self.window, "DebugInfo", format!("{}", path).as_str());
-        // Evil pattern matching
-        let image = match self.decoder.from_filename(path) {
-            Ok(img) => img,
-            Err(_) => {
-                nwg::modal_error_message(&self.window, "Error", "Could not read image!");
-                return;
-            }
-        };
 
-        let mut image_frame = match image.frame(0) {
-            Ok(bmp) => bmp,
-            Err(_) => {
-                nwg::modal_error_message(&self.window, "Error", "Could not read image frame!");
-                return;
-            }
-        };
-
-        let (frame_width, frame_height) = self.img_frame_ui.size();
-        let (image_width, image_height) = image_frame.size();
-        //If the frame is bigger then the image
-        if frame_width < image_width || frame_height < image_height {
-            let factor: f32;
-            if frame_width < image_width {
-                factor = frame_width as f32 / image_width as f32;
-            } else {
-                factor = frame_height as f32 / image_height as f32;
-            }
-
-            //Scale down by certain factor
-            let new_image_height = image_height as f32 * factor;
-            let new_image_width = image_width as f32 * factor;
-            image_frame = match self.decoder.resize_image(
-                &image_frame,
-                [new_image_width as u32, new_image_height as u32],
-            ) {
-                Ok(frame) => frame,
-                Err(_) => {
+        if paths.len() > 0 {
+            let path = match paths.get(0) {
+                Some(path) => path,
+                None => {
                     nwg::modal_error_message(
                         &self.window,
                         "Error",
-                        "Could not resize image frame!",
+                        "Vector empty after check (Shouldn't happen)",
                     );
                     return;
                 }
             };
-        }
-        match image_frame.as_bitmap() {
-            Ok(bitmap) => {
-                let mut img = self.loaded_image.borrow_mut();
-                img.replace(bitmap);
-                self.img_frame_ui.set_bitmap(img.as_ref());
+
+            // nwg::modal_info_message(&self.window, "DebugInfo", format!("{}", path).as_str());
+            // Evil pattern matching
+            let image = match self.decoder.from_filename(path) {
+                Ok(img) => img,
+                Err(_) => {
+                    nwg::modal_error_message(&self.window, "Error", "Could not read image!");
+                    return;
+                }
+            };
+
+            let mut image_frame = match image.frame(0) {
+                Ok(bmp) => bmp,
+                Err(_) => {
+                    nwg::modal_error_message(&self.window, "Error", "Could not read image frame!");
+                    return;
+                }
+            };
+
+            let (frame_width, frame_height) = self.img_frame_ui.size();
+            let (image_width, image_height) = image_frame.size();
+            //If the frame is bigger then the image
+            if frame_width < image_width || frame_height < image_height {
+                let factor: f32;
+                if frame_width < image_width {
+                    factor = frame_width as f32 / image_width as f32;
+                } else {
+                    factor = frame_height as f32 / image_height as f32;
+                }
+
+                //Scale down by certain factor
+                let new_image_height = image_height as f32 * factor;
+                let new_image_width = image_width as f32 * factor;
+                image_frame = match self.decoder.resize_image(
+                    &image_frame,
+                    [new_image_width as u32, new_image_height as u32],
+                ) {
+                    Ok(frame) => frame,
+                    Err(_) => {
+                        nwg::modal_error_message(
+                            &self.window,
+                            "Error",
+                            "Could not resize image frame!",
+                        );
+                        return;
+                    }
+                };
             }
-            Err(_) => {
-                nwg::modal_error_message(
-                    &self.window,
-                    "Error",
-                    "Could not convert image to bitmap!",
-                );
+            match image_frame.as_bitmap() {
+                Ok(bitmap) => {
+                    let mut img = self.loaded_image.borrow_mut();
+                    img.replace(bitmap);
+                    self.img_frame_ui.set_bitmap(img.as_ref());
+                }
+                Err(_) => {
+                    nwg::modal_error_message(
+                        &self.window,
+                        "Error",
+                        "Could not convert image to bitmap!",
+                    );
+                }
             }
         }
     }
@@ -210,7 +235,8 @@ impl App {
                 .collect::<Vec<String>>();
 
             self.filenames_buffer.replace(names);
-            self.upate_img()
+            self.upate_img();
+            self.update_img_count();
         }
     }
 
