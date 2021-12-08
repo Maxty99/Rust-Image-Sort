@@ -4,7 +4,6 @@ use std::cell::RefCell;
 use std::env;
 
 use std::fs;
-use std::path::Path;
 
 use native_windows_derive as nwd;
 use native_windows_gui as nwg;
@@ -39,14 +38,17 @@ pub struct App {
 
     #[nwg_control(text: "One", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 10)]
+    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_one_btn: nwg::Button,
 
     #[nwg_control(text: "Two", focus: false)]
     #[nwg_layout_item(layout: grid, col: 1, row: 10)]
+    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_two_btn: nwg::Button,
 
     #[nwg_control(text: "Three", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 10)]
+    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_three_btn: nwg::Button,
 
     #[nwg_control(text: "Pictures", focus: false)]
@@ -245,15 +247,27 @@ impl App {
         let mut paths = self.filenames_buffer.borrow_mut();
         let btn_text = ctrl.text();
         let path_of_file = paths.swap_remove(0); //Faster than remove, and I dont care about ordering
-        let name_of_file = path_of_file.split("\\").last().unwrap(); //TODO: Actual error checking
-        let mut path_to_move_to: &str; //TODO: The moving logic :/ becasue I cant be bothered right now
+        let name_of_file = path_of_file.split("\\").last().unwrap().to_owned(); //TODO: Actual error checking
+        let path_to_move_to: String;
         match btn_text.as_str() {
-            "One" => { //
+            "One" => {
+                let cat_one_folder_path = self.cat_one_dir_text.text() + "\\";
+                path_to_move_to = cat_one_folder_path + &name_of_file;
             }
-            "Two" => {}
-            "Three" => {}
+            "Two" => {
+                let cat_two_folder_path = self.cat_two_dir_text.text() + "\\";
+                path_to_move_to = cat_two_folder_path + &name_of_file;
+            }
+            "Three" => {
+                let cat_three_folder_path = self.cat_three_dir_text.text() + "\\";
+                path_to_move_to = cat_three_folder_path + &name_of_file;
+            }
             _ => panic!("This should not happen, match statement error"),
         }
+        fs::rename(path_of_file, path_to_move_to); //TODO: Actual error checking
+        self.upate_img();
+        self.update_img_count();
+        // This moves the image but crashes, probably the borrow...
     }
 
     //TODO: Yeah uh just for debug ok
