@@ -20,7 +20,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnResizeEnd: [App::debug_command])]
+    #[nwg_events( OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -34,7 +34,7 @@ pub struct App {
 
     #[nwg_control]
     #[nwg_layout_item(layout: grid, col: 0, row: 0, col_span: 3, row_span: 10)]
-    img: nwg::ImageFrame,
+    img_frame_ui: nwg::ImageFrame,
 
     #[nwg_control(text: "One", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 10)]
@@ -109,7 +109,7 @@ impl App {
             }
         };
 
-        let frame = match image.frame(0) {
+        let mut image_frame = match image.frame(0) {
             Ok(bmp) => bmp,
             Err(_) => {
                 nwg::modal_error_message(&self.window, "Error", "Could not read image frame!");
@@ -117,11 +117,40 @@ impl App {
             }
         };
 
-        match frame.as_bitmap() {
+        let (frame_width, frame_height) = self.img_frame_ui.size();
+        let (image_width, image_height) = image_frame.size();
+        //If the frame is bigger then the image
+        if frame_width < image_width || frame_height < image_height {
+            let factor: f32;
+            if frame_width < image_width {
+                factor = frame_width as f32 / image_width as f32;
+            } else {
+                factor = frame_height as f32 / image_height as f32;
+            }
+
+            //Scale down by certain factor
+            let new_image_height = image_height as f32 * factor;
+            let new_image_width = image_width as f32 * factor;
+            image_frame = match self.decoder.resize_image(
+                &image_frame,
+                [new_image_width as u32, new_image_height as u32],
+            ) {
+                Ok(frame) => frame,
+                Err(_) => {
+                    nwg::modal_error_message(
+                        &self.window,
+                        "Error",
+                        "Could not resize image frame!",
+                    );
+                    return;
+                }
+            };
+        }
+        match image_frame.as_bitmap() {
             Ok(bitmap) => {
                 let mut img = self.loaded_image.borrow_mut();
                 img.replace(bitmap);
-                self.img.set_bitmap(img.as_ref());
+                self.img_frame_ui.set_bitmap(img.as_ref());
             }
             Err(_) => {
                 nwg::modal_error_message(
@@ -190,15 +219,6 @@ impl App {
         if data.on_key() == nwg::keys::_A {
             nwg::modal_info_message(&self.window, "haha", "lol");
         }
-    }
-
-    //TODO: Yeah uh just for debug ok
-    fn debug_command(&self) {
-        nwg::modal_info_message(
-            &self.window,
-            "Debug",
-            format!("Frame size: {:?}", self.img.size()).as_str(),
-        );
     }
 }
 fn main() {
