@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::env;
 
 use std::fs;
+use std::path::Path;
 
 use native_windows_derive as nwd;
 use native_windows_gui as nwg;
@@ -237,6 +238,21 @@ impl App {
             self.filenames_buffer.replace(names);
             self.upate_img();
             self.update_img_count();
+        }
+    }
+
+    fn move_file(&self, ctrl: &Button) {
+        let mut paths = self.filenames_buffer.borrow_mut();
+        let btn_text = ctrl.text();
+        let path_of_file = paths.swap_remove(0); //Faster than remove, and I dont care about ordering
+        let name_of_file = path_of_file.split("\\").last().unwrap(); //TODO: Actual error checking
+        let mut path_to_move_to: &str; //TODO: The moving logic :/ becasue I cant be bothered right now
+        match btn_text.as_str() {
+            "One" => { //
+            }
+            "Two" => {}
+            "Three" => {}
+            _ => panic!("This should not happen, match statement error"),
         }
     }
 
