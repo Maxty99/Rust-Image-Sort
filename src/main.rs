@@ -107,7 +107,7 @@ impl App {
     fn update_img_count(&self) {
         let paths = self.filenames_buffer.borrow();
         self.status_bar
-            .set_text(1, format!("Images found: {}", paths.len()).as_str())
+            .set_text(0, format!("Images found: {}", paths.len()).as_str())
     }
 
     fn upate_img(&self) {
