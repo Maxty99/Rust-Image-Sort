@@ -300,7 +300,16 @@ impl App {
             }
             _ => panic!("This should not happen, match statement error"),
         }
-        fs::rename(path_of_file, path_to_move_to); //TODO: Actuall error handling
+        match fs::rename(path_of_file, path_to_move_to) {
+            Ok(_) => {}
+            Err(err) => {
+                nwg::modal_error_message(
+                    &self.window,
+                    "Error",
+                    format!("Could not move image {} !", err).as_str(),
+                );
+            }
+        }
     }
 
     //TODO: Yeah uh just for debug ok
