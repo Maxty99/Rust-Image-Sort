@@ -249,7 +249,7 @@ impl App {
                     // Skips non files
                     entry.ok().and_then(|e| {
                         //Turns into string
-                        e.path().as_os_str().to_str().map(|s| String::from(s))
+                        e.path().as_os_str().to_str().map(String::from)
                     })
                 })
                 .filter(|x| x.ends_with(".jpg") | x.ends_with(".jpeg") | x.ends_with(".png"))
@@ -283,7 +283,7 @@ impl App {
         let mut paths = self.filenames_buffer.borrow_mut();
         let btn_text = ctrl.text();
         let path_of_file = paths.swap_remove(0);
-        let name_of_file = path_of_file.split("\\").last().unwrap().to_owned();
+        let name_of_file = path_of_file.split('\\').last().unwrap().to_owned();
         let path_to_move_to: String;
         match btn_text.as_str() {
             "One" => {
