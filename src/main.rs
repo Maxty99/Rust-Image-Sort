@@ -38,17 +38,17 @@ pub struct App {
 
     #[nwg_control(text: "One", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 10)]
-    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     cat_one_btn: nwg::Button,
 
     #[nwg_control(text: "Two", focus: false)]
     #[nwg_layout_item(layout: grid, col: 1, row: 10)]
-    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     cat_two_btn: nwg::Button,
 
     #[nwg_control(text: "Three", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 10)]
-    #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     cat_three_btn: nwg::Button,
 
     #[nwg_control(text: "Pictures", focus: false)]
@@ -271,11 +271,19 @@ impl App {
         }
     }
 
+    fn process_moving_file(&self, ctrl: &Button) {
+        self.move_file(ctrl);
+        self.upate_img();
+        self.update_img_count();
+        // Have to do this through another function to make sure borrow of refcell
+        // goes out fo scope and doesnt panic
+    }
+
     fn move_file(&self, ctrl: &Button) {
         let mut paths = self.filenames_buffer.borrow_mut();
         let btn_text = ctrl.text();
-        let path_of_file = paths.swap_remove(0); //Faster than remove, and I dont care about ordering
-        let name_of_file = path_of_file.split("\\").last().unwrap().to_owned(); //TODO: Actual error checking
+        let path_of_file = paths.swap_remove(0);
+        let name_of_file = path_of_file.split("\\").last().unwrap().to_owned();
         let path_to_move_to: String;
         match btn_text.as_str() {
             "One" => {
@@ -292,10 +300,7 @@ impl App {
             }
             _ => panic!("This should not happen, match statement error"),
         }
-        fs::rename(path_of_file, path_to_move_to); //TODO: Actual error checking
-        self.upate_img();
-        self.update_img_count();
-        // This moves the image but crashes, probably the borrow...
+        fs::rename(path_of_file, path_to_move_to); //TODO: Actuall error handling
     }
 
     //TODO: Yeah uh just for debug ok
