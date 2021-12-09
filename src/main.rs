@@ -20,7 +20,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)])]
+    #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::set_buttons_disabled])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -102,6 +102,15 @@ impl App {
     fn set_min(&self, data: &nwg::EventData) {
         let data = data.on_min_max();
         data.set_min_size(600, 700);
+    }
+
+    fn set_buttons_disabled(&self) {
+        self.cat_one_btn.set_enabled(false);
+        self.cat_two_btn.set_enabled(false);
+        self.cat_three_btn.set_enabled(false);
+        self.cat_one_choose_btn.set_enabled(false);
+        self.cat_two_choose_btn.set_enabled(false);
+        self.cat_three_choose_btn.set_enabled(false);
     }
 
     fn update_img_count(&self) {
@@ -199,9 +208,18 @@ impl App {
                 text_feild = &self.open_dir_text;
                 process_pictures = true
             }
-            "Category 1" => text_feild = &self.cat_one_dir_text,
-            "Category 2" => text_feild = &self.cat_two_dir_text,
-            "Category 3" => text_feild = &self.cat_three_dir_text,
+            "Category 1" => {
+                text_feild = &self.cat_one_dir_text;
+                self.cat_one_btn.set_enabled(true);
+            }
+            "Category 2" => {
+                text_feild = &self.cat_two_dir_text;
+                self.cat_two_btn.set_enabled(true);
+            }
+            "Category 3" => {
+                text_feild = &self.cat_three_dir_text;
+                self.cat_three_btn.set_enabled(true);
+            }
             _ => panic!("This should not happen, match statement error"),
         }
 
@@ -240,6 +258,16 @@ impl App {
             self.filenames_buffer.replace(names);
             self.upate_img();
             self.update_img_count();
+            if self.filenames_buffer.borrow().len() > 0 {
+                // Only enable when theres images to move
+                self.cat_one_choose_btn.set_enabled(true);
+                self.cat_two_choose_btn.set_enabled(true);
+                self.cat_three_choose_btn.set_enabled(true);
+            } else {
+                self.cat_one_choose_btn.set_enabled(false);
+                self.cat_two_choose_btn.set_enabled(false);
+                self.cat_three_choose_btn.set_enabled(false);
+            }
         }
     }
 
