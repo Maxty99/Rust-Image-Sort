@@ -199,6 +199,8 @@ impl App {
         }
     }
     fn open_folder(&self, ctrl: &Button) {
+        self.window.set_focus(); //Always focus window for keydown events
+
         // See which text box to update with the new path
         let btn_text = ctrl.text();
         let text_feild: &nwg::TextInput;
@@ -272,6 +274,7 @@ impl App {
     }
 
     fn process_moving_file(&self, ctrl: &Button) {
+        self.window.set_focus(); //Always focus window for keydown events
         self.move_file(ctrl);
         self.upate_img();
         self.update_img_count();
@@ -314,8 +317,14 @@ impl App {
 
     //TODO: Yeah uh just for debug ok
     fn process_keypress(&self, data: &nwg::EventData) {
-        if data.on_key() == nwg::keys::_A {
-            nwg::modal_info_message(&self.window, "haha", "lol");
+        if data.on_key() == nwg::keys::_A && self.cat_one_btn.enabled() {
+            self.cat_one_btn.click()
+        }
+        if data.on_key() == nwg::keys::_W && self.cat_two_btn.enabled() {
+            self.cat_two_btn.click();
+        }
+        if data.on_key() == nwg::keys::_D && self.cat_three_btn.enabled() {
+            self.cat_three_btn.click();
         }
     }
 }
