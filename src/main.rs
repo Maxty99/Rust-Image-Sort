@@ -155,33 +155,43 @@ impl App {
 
             let (frame_width, frame_height) = self.img_frame_ui.size();
             let (image_width, image_height) = image_frame.size();
-            //If the frame is bigger then the image
-            if frame_width < image_width || frame_height < image_height {
-                let factor: f32;
-                if frame_width < image_width {
-                    factor = frame_width as f32 / image_width as f32;
-                } else {
-                    factor = frame_height as f32 / image_height as f32;
-                }
 
-                //Scale down by certain factor
-                let new_image_height = image_height as f32 * factor;
-                let new_image_width = image_width as f32 * factor;
-                image_frame = match self.decoder.resize_image(
-                    &image_frame,
-                    [new_image_width as u32, new_image_height as u32],
-                ) {
-                    Ok(frame) => frame,
-                    Err(_) => {
-                        nwg::modal_error_message(
-                            &self.window,
-                            "Error",
-                            "Could not resize image frame!",
-                        );
-                        return;
-                    }
-                };
+            let mut factor: f32;
+            if frame_height < image_height {
+                factor = frame_height as f32 / image_height as f32;
+            } else {
+                factor = 1.0;
             }
+
+            //Scale down by certain factor
+            let image_height = image_height as f32 * factor;
+            let image_width = image_width as f32 * factor;
+
+            if frame_width < image_width as u32 {
+                factor = frame_width as f32 / image_width as f32;
+            } else {
+                factor = 1.0;
+            }
+
+            //Scale down by certain factor
+            let image_height = image_height as f32 * factor;
+            let image_width = image_width as f32 * factor;
+
+            image_frame = match self
+                .decoder
+                .resize_image(&image_frame, [image_width as u32, image_height as u32])
+            {
+                Ok(frame) => frame,
+                Err(_) => {
+                    nwg::modal_error_message(
+                        &self.window,
+                        "Error",
+                        "Could not resize image frame!",
+                    );
+                    return;
+                }
+            };
+
             match image_frame.as_bitmap() {
                 Ok(bitmap) => {
                     let mut img = self.loaded_image.borrow_mut();
