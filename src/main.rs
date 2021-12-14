@@ -5,6 +5,8 @@ use std::env;
 
 use std::fs;
 
+use trash;
+
 use native_windows_derive as nwd;
 use native_windows_gui as nwg;
 
@@ -51,44 +53,58 @@ pub struct App {
     #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     cat_three_btn: nwg::Button,
 
-    #[nwg_control(text: "Pictures", focus: false)]
+    //TODO: No use for now, will add functionality later for going back and forth (also maybe undo button)
+    /*#[nwg_control(text: "<-", focus: false)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 11)]
+    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
+    left_btn: nwg::Button,*/
+    /*#[nwg_control(text: "->", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 11)]
+    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
+    right_btn: nwg::Button,*/
+    #[nwg_control(text: "Delete", focus: false)]
+    #[nwg_layout_item(layout: grid, col: 1, row: 11)]
+    #[nwg_events( OnButtonClick: [App::delete_file])]
+    delete_btn: nwg::Button,
+
+    #[nwg_control(text: "Pictures", focus: false)]
+    #[nwg_layout_item(layout: grid, col: 2, row: 12)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     open_btn: nwg::Button,
 
     #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 11, col_span: 2)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 12, col_span: 2)]
     open_dir_text: nwg::TextInput,
 
     #[nwg_control(text: "Category 1", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 12)]
+    #[nwg_layout_item(layout: grid, col: 2, row: 13)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_one_choose_btn: nwg::Button,
 
     #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 12, col_span: 2)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 13, col_span: 2)]
     cat_one_dir_text: nwg::TextInput,
 
     #[nwg_control(text: "Category 2", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 13)]
+    #[nwg_layout_item(layout: grid, col: 2, row: 14)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_two_choose_btn: nwg::Button,
 
     #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 13, col_span: 2)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 14, col_span: 2)]
     cat_two_dir_text: nwg::TextInput,
 
     #[nwg_control(text: "Category 3", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 14)]
+    #[nwg_layout_item(layout: grid, col: 2, row: 15)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_three_choose_btn: nwg::Button,
 
     #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 14, col_span: 2)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 15, col_span: 2)]
     cat_three_dir_text: nwg::TextInput,
 
     #[nwg_control(text: "Open folder to load images")]
-    #[nwg_layout_item(layout: grid, col: 0, row: 15, col_span: 3)]
+    #[nwg_layout_item(layout: grid, col: 0, row: 16, col_span: 3)]
     // Even though its not part of the grid I need to do this so it
     // isnt drawn over by the category three button and textbox
     status_bar: nwg::StatusBar,
@@ -292,8 +308,19 @@ impl App {
         // goes out of scope and doesnt panic
     }
 
-    fn delete_file(){
-
+    fn delete_file(&self) {
+        let mut paths = self.filenames_buffer.borrow_mut();
+        let path_of_file = paths.swap_remove(0);
+        match trash::delete(path_of_file) {
+            Ok(_) => {}
+            Err(err) => {
+                nwg::modal_error_message(
+                    &self.window,
+                    "Error",
+                    format!("Could not delete image {} !", err).as_str(),
+                );
+            }
+        }
     }
 
     fn move_file(&self, ctrl: &Button) {
