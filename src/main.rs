@@ -289,7 +289,11 @@ impl App {
         self.upate_img();
         self.update_img_count();
         // Have to do this through another function to make sure borrow of refcell
-        // goes out fo scope and doesnt panic
+        // goes out of scope and doesnt panic
+    }
+
+    fn delete_file(){
+
     }
 
     fn move_file(&self, ctrl: &Button) {
