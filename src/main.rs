@@ -356,7 +356,6 @@ impl App {
         }
     }
 
-    //TODO: Yeah uh just for debug ok
     fn process_keypress(&self, data: &nwg::EventData) {
         if data.on_key() == nwg::keys::_A && self.cat_one_btn.enabled() {
             self.cat_one_btn.click()
