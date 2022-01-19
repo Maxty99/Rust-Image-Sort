@@ -290,9 +290,9 @@ impl App {
         let path = self
             .folder_select
             .get_selected_item()
-            .expect("System error occured");
+            .expect("System error occured"); //TODO Modal Error
 
-        text_feild.set_text(path.to_str().expect("Path isn't valid unicode"));
+        text_feild.set_text(path.to_str().expect("Path isn't valid unicode")); //TODO Modal Error
         if process_pictures {
             let paths = fs::read_dir(path).expect("Not enough permissions"); //Expects not enough permissions
 
