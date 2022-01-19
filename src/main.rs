@@ -25,8 +25,6 @@ pub struct Action {
     action_type: ActionType,
 }
 
-
-
 #[derive(Default, NwgUi)]
 pub struct App {
     filenames_buffer: RefCell<Vec<String>>,
