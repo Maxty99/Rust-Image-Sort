@@ -235,6 +235,10 @@ impl App {
                     );
                 }
             }
+        } else {
+            let mut img = self.loaded_image.borrow_mut();
+            img.replace(nwg::Bitmap::default());
+            self.img_frame_ui.set_bitmap(img.as_ref());
         }
     }
     fn open_folder(&self, ctrl: &Button) {
