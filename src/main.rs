@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::env;
 
 use std::fs;
+use std::path::Path;
 
 use trash;
 
@@ -35,7 +36,7 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
-    #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::set_buttons_disabled])]
+    #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::update_button_status])]
     window: nwg::Window,
 
     #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
@@ -132,14 +133,23 @@ impl App {
         let data = data.on_min_max();
         data.set_min_size(600, 700);
     }
-
-    fn set_buttons_disabled(&self) {
-        self.cat_one_btn.set_enabled(false);
-        self.cat_two_btn.set_enabled(false);
-        self.cat_three_btn.set_enabled(false);
-        self.cat_one_choose_btn.set_enabled(false);
-        self.cat_two_choose_btn.set_enabled(false);
-        self.cat_three_choose_btn.set_enabled(false);
+    //TODO: Change this into a button state updater
+    // so I can just call it and it'll update the buttons
+    // to be disabled and enabled the right way
+    fn update_button_status(&self) {
+        let image_list_empty = self.filenames_buffer.borrow().is_empty();
+        let action_list_empty = self.actions.borrow().is_empty();
+        self.cat_one_btn
+            .set_enabled(Path::new(&self.cat_one_dir_text.text()).exists() && !image_list_empty);
+        self.cat_two_btn
+            .set_enabled(Path::new(&self.cat_two_dir_text.text()).exists() && !image_list_empty);
+        self.cat_three_btn
+            .set_enabled(Path::new(&self.cat_three_dir_text.text()).exists() && !image_list_empty);
+        self.cat_one_choose_btn.set_enabled(!image_list_empty);
+        self.cat_two_choose_btn.set_enabled(!image_list_empty);
+        self.cat_three_choose_btn.set_enabled(!image_list_empty);
+        self.undo_btn.set_enabled(!action_list_empty);
+        self.delete_btn.set_enabled(!image_list_empty);
     }
 
     fn update_img_count(&self) {
@@ -255,15 +265,12 @@ impl App {
             }
             "Category 1" => {
                 text_feild = &self.cat_one_dir_text;
-                self.cat_one_btn.set_enabled(true);
             }
             "Category 2" => {
                 text_feild = &self.cat_two_dir_text;
-                self.cat_two_btn.set_enabled(true);
             }
             "Category 3" => {
                 text_feild = &self.cat_three_dir_text;
-                self.cat_three_btn.set_enabled(true);
             }
             _ => panic!("This should not happen, match statement error"),
         }
@@ -303,20 +310,12 @@ impl App {
             self.filenames_buffer.replace(names);
             self.upate_img();
             self.update_img_count();
-            if self.filenames_buffer.borrow().len() > 0 {
-                // Only enable when theres images to move
-                self.cat_one_choose_btn.set_enabled(true);
-                self.cat_two_choose_btn.set_enabled(true);
-                self.cat_three_choose_btn.set_enabled(true);
-            } else {
-                self.cat_one_choose_btn.set_enabled(false);
-                self.cat_two_choose_btn.set_enabled(false);
-                self.cat_three_choose_btn.set_enabled(false);
-            }
         }
+        self.update_button_status();
     }
 
     fn delete_file(&self) {
+        self.window.set_focus(); //Always focus window for keydown events
         let mut paths = self.filenames_buffer.borrow_mut();
         let path_of_file = paths.swap_remove(0);
         let mut actions = self.actions.borrow_mut();
@@ -337,6 +336,11 @@ impl App {
                 );
             }
         }
+        drop(paths); // So I dont cause a double borrow mut
+        drop(actions); // So I dont cause a double borrow mut
+        self.update_button_status();
+        self.upate_img();
+        self.update_img_count();
     }
 
     fn move_file(&self, ctrl: &Button) {
@@ -382,6 +386,8 @@ impl App {
             }
         }
         drop(paths); // So I dont cause a double borrow mut
+        drop(actions); // So I dont cause a double borrow mut
+        self.update_button_status();
         self.upate_img();
         self.update_img_count();
     }
