@@ -157,6 +157,63 @@ impl App {
         self.status_bar
             .set_text(0, format!("Images found: {}", paths.len()).as_str())
     }
+    fn undo(&self) {
+        self.window.set_focus(); //Always focus window for keydown events
+        let mut actions = self.actions.borrow_mut();
+        let mut paths = self.filenames_buffer.borrow_mut();
+        if let Some(action_to_undo) = actions.pop() {
+            match action_to_undo.action_type {
+                ActionType::DELETE => {
+                    let to_restore = match trash::os_limited::list() {
+                        Ok(trash_item_vec) => trash_item_vec
+                            .into_iter()
+                            .filter(|trash_item| action_to_undo.from.ends_with(&trash_item.name)),
+                        Err(_) => {
+                            nwg::modal_error_message(
+                                &self.window,
+                                "Error",
+                                "Can't find item in recycle bin to restore",
+                            );
+                            return;
+                        }
+                    };
+                    match trash::os_limited::restore_all(to_restore) {
+                        Ok(_) => {
+                            paths.insert(0, action_to_undo.from);
+                        }
+                        Err(_) => {
+                            nwg::modal_error_message(
+                                &self.window,
+                                "Error",
+                                "Can't restore item in recycle bin",
+                            );
+                            return;
+                        }
+                    }
+                }
+                ActionType::MOVE => {
+                    match fs::rename(&action_to_undo.to.unwrap(), &action_to_undo.from) {
+                        //I can unwrap here becasue it will not be Null
+                        Ok(_) => {
+                            paths.insert(0, action_to_undo.from);
+                        }
+                        Err(err) => {
+                            nwg::modal_error_message(
+                                &self.window,
+                                "Error",
+                                format!("Could not move image {} !", err).as_str(),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        drop(actions); // So I dont cause a borrow mut with regular borrow
+        drop(paths); // So I dont cause a double borrow mut
+        self.upate_img();
+        self.update_img_count();
+        self.update_button_status();
+    }
 
     fn upate_img(&self) {
         let paths = self.filenames_buffer.borrow();
