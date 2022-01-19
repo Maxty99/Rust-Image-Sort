@@ -14,11 +14,26 @@ use nwd::NwgUi;
 use nwg::Button;
 use nwg::NativeUi;
 
+enum ActionType {
+    MOVE,
+    DELETE,
+}
+
+pub struct Action {
+    from: String,
+    to: Option<String>,
+    action_type: ActionType,
+}
+
+
+
 #[derive(Default, NwgUi)]
 pub struct App {
     filenames_buffer: RefCell<Vec<String>>,
 
     loaded_image: RefCell<Option<nwg::Bitmap>>,
+
+    actions: RefCell<Vec<Action>>,
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
@@ -53,12 +68,12 @@ pub struct App {
     #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     cat_three_btn: nwg::Button,
 
-    //TODO: No use for now, will add functionality later for going back and forth (also maybe undo button)
-    /*#[nwg_control(text: "<-", focus: false)]
+    //TODO:
+    #[nwg_control(text: "Undo", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 11)]
-    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
-    left_btn: nwg::Button,*/
-    /*#[nwg_control(text: "->", focus: false)]
+    #[nwg_events( OnButtonClick: [App::undo])]
+    undo_btn: nwg::Button,
+    /*#[nwg_control(text: "Config", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 11)]
     #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
     right_btn: nwg::Button,*/
@@ -311,8 +326,16 @@ impl App {
     fn delete_file(&self) {
         let mut paths = self.filenames_buffer.borrow_mut();
         let path_of_file = paths.swap_remove(0);
-        match trash::delete(path_of_file) {
-            Ok(_) => {}
+        let mut actions = self.actions.borrow_mut();
+        match trash::delete(&path_of_file) {
+            Ok(_) => {
+                let action = Action {
+                    from: path_of_file,
+                    to: None,
+                    action_type: ActionType::DELETE,
+                };
+                actions.push(action);
+            }
             Err(err) => {
                 nwg::modal_error_message(
                     &self.window,
@@ -344,8 +367,18 @@ impl App {
             }
             _ => panic!("This should not happen, match statement error"),
         }
-        match fs::rename(path_of_file, path_to_move_to) {
-            Ok(_) => {}
+
+        let mut actions = self.actions.borrow_mut();
+
+        match fs::rename(&path_of_file, &path_to_move_to) {
+            Ok(_) => {
+                let action = Action {
+                    from: path_of_file,
+                    to: Some(path_to_move_to),
+                    action_type: ActionType::MOVE,
+                };
+                actions.push(action);
+            }
             Err(err) => {
                 nwg::modal_error_message(
                     &self.window,
@@ -365,6 +398,9 @@ impl App {
         }
         if data.on_key() == nwg::keys::_D && self.cat_three_btn.enabled() {
             self.cat_three_btn.click();
+        }
+        if data.on_key() == nwg::keys::_Z && self.cat_three_btn.enabled() {
+            self.undo_btn.click();
         }
     }
 }
