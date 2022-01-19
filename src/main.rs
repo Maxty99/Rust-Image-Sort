@@ -251,7 +251,7 @@ impl App {
         match btn_text.as_str() {
             "Pictures" => {
                 text_feild = &self.open_dir_text;
-                process_pictures = true
+                process_pictures = true;
             }
             "Category 1" => {
                 text_feild = &self.cat_one_dir_text;
