@@ -6,8 +6,6 @@ use std::env;
 use std::fs;
 use std::path::Path;
 
-use trash;
-
 use native_windows_derive as nwd;
 use native_windows_gui as nwg;
 
@@ -16,8 +14,8 @@ use nwg::Button;
 use nwg::NativeUi;
 
 enum ActionType {
-    MOVE,
-    DELETE,
+    Move,
+    Delete,
 }
 
 pub struct Action {
@@ -163,7 +161,7 @@ impl App {
         let mut paths = self.filenames_buffer.borrow_mut();
         if let Some(action_to_undo) = actions.pop() {
             match action_to_undo.action_type {
-                ActionType::DELETE => {
+                ActionType::Delete => {
                     let to_restore = match trash::os_limited::list() {
                         Ok(trash_item_vec) => trash_item_vec
                             .into_iter()
@@ -191,7 +189,7 @@ impl App {
                         }
                     }
                 }
-                ActionType::MOVE => {
+                ActionType::Move => {
                     match fs::rename(&action_to_undo.to.unwrap(), &action_to_undo.from) {
                         //I can unwrap here becasue it will not be Null
                         Ok(_) => {
@@ -381,7 +379,7 @@ impl App {
                 let action = Action {
                     from: path_of_file,
                     to: None,
-                    action_type: ActionType::DELETE,
+                    action_type: ActionType::Delete,
                 };
                 actions.push(action);
             }
@@ -430,7 +428,7 @@ impl App {
                 let action = Action {
                     from: path_of_file,
                     to: Some(path_to_move_to),
-                    action_type: ActionType::MOVE,
+                    action_type: ActionType::Move,
                 };
                 actions.push(action);
             }
