@@ -33,7 +33,6 @@ pub struct App {
     actions: RefCell<Vec<Action>>,
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
-    //VERY IMPORTANT OTHERWISE IT DOESNT END PROCESS
     #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::update_button_status])]
     window: nwg::Window,
 
