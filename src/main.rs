@@ -472,7 +472,12 @@ impl App {
         if data.on_key() == nwg::keys::_D && self.cat_three_btn.enabled() {
             self.cat_three_btn.click();
         }
-        if data.on_key() == nwg::keys::_Z && self.cat_three_btn.enabled() {
+        if data.on_key() == nwg::keys::_Z && self.undo_btn.enabled() {
+            self.undo_btn.click();
+        }
+        if (data.on_key() == nwg::keys::DELETE || data.on_key() == nwg::keys::_S)
+            && self.delete_btn.enabled()
+        {
             self.undo_btn.click();
         }
     }
