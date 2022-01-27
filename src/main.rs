@@ -130,9 +130,7 @@ impl App {
         let data = data.on_min_max();
         data.set_min_size(600, 700);
     }
-    //TODO: Change this into a button state updater
-    // so I can just call it and it'll update the buttons
-    // to be disabled and enabled the right way
+
     fn update_button_status(&self) {
         let image_list_empty = self.filenames_buffer.borrow().is_empty();
         let action_list_empty = self.actions.borrow().is_empty();
