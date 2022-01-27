@@ -34,9 +34,9 @@ pub struct App {
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::update_button_status])]
-    window: nwg::Window,
+    main_window: nwg::Window,
 
-    #[nwg_layout(parent: window, spacing: 2, min_size: [500, 500])]
+    #[nwg_layout(parent: main_window, spacing: 2, margin: [10,10,30,10])]
     grid: nwg::GridLayout,
 
     #[nwg_resource]
@@ -45,80 +45,85 @@ pub struct App {
     #[nwg_resource(title: "Select a folder", action: nwg::FileDialogAction::OpenDirectory)]
     folder_select: nwg::FileDialog,
 
-    #[nwg_control]
+    #[nwg_control(parent: main_window)]
     #[nwg_layout_item(layout: grid, col: 0, row: 0, col_span: 3, row_span: 10)]
     img_frame_ui: nwg::ImageFrame,
 
-    #[nwg_control(text: "One", focus: false)]
+    #[nwg_control(parent: main_window, text: "One", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 10)]
     #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_one_btn: nwg::Button,
 
-    #[nwg_control(text: "Two", focus: false)]
+    #[nwg_control(parent: main_window, text: "Two", focus: false)]
     #[nwg_layout_item(layout: grid, col: 1, row: 10)]
     #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_two_btn: nwg::Button,
 
-    #[nwg_control(text: "Three", focus: false)]
+    #[nwg_control(parent: main_window, text: "Three", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 10)]
     #[nwg_events( OnButtonClick: [App::move_file(SELF, CTRL)])]
     cat_three_btn: nwg::Button,
 
-    //TODO:
-    #[nwg_control(text: "Undo", focus: false)]
+    #[nwg_control(parent: main_window, text: "Undo", focus: false)]
     #[nwg_layout_item(layout: grid, col: 0, row: 11)]
     #[nwg_events( OnButtonClick: [App::undo])]
     undo_btn: nwg::Button,
-    /*#[nwg_control(text: "Config", focus: false)]
+
+    #[nwg_control(parent: main_window, text: "Config", focus: false)]
     #[nwg_layout_item(layout: grid, col: 2, row: 11)]
-    #[nwg_events( OnButtonClick: [App::process_moving_file(SELF, CTRL)])]
-    right_btn: nwg::Button,*/
-    #[nwg_control(text: "Delete", focus: false)]
+    #[nwg_events( OnButtonClick: [App::open_config])]
+    config_btn: nwg::Button,
+
+    #[nwg_control(parent: main_window, text: "Delete", focus: false)]
     #[nwg_layout_item(layout: grid, col: 1, row: 11)]
     #[nwg_events( OnButtonClick: [App::delete_file])]
     delete_btn: nwg::Button,
 
-    #[nwg_control(text: "Pictures", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 12)]
+    #[nwg_control(parent: main_window, text: "Open folder to load images")]
+    status_bar: nwg::StatusBar,
+
+    #[nwg_control(flags: "WINDOW", title: "Image Sort", center: true)]
+    #[nwg_events(OnWindowClose: [App::close_config])]
+    config_window: nwg::Window,
+
+    #[nwg_layout(parent: config_window, spacing: 2, min_size: [500, 500])]
+    config_grid: nwg::GridLayout,
+
+    #[nwg_control(parent: config_window, text: "Pictures", size: (100,25), focus: false)]
+    #[nwg_layout_item(layout: config_grid, col: 2, row: 0)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     open_btn: nwg::Button,
 
-    #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 12, col_span: 2)]
+    #[nwg_control(parent: config_window,text: "", focus: false, size: (100,25), readonly: true)]
+    #[nwg_layout_item(layout: config_grid, col: 0, row: 0, col_span: 2)]
     open_dir_text: nwg::TextInput,
 
-    #[nwg_control(text: "Category 1", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 13)]
+    #[nwg_control(parent: config_window, text: "Category 1", size: (100,25), focus: false)]
+    #[nwg_layout_item(layout: config_grid, col: 2, row: 1)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_one_choose_btn: nwg::Button,
 
-    #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 13, col_span: 2)]
+    #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
+    #[nwg_layout_item(layout: config_grid, col: 0, row: 1, col_span: 2)]
     cat_one_dir_text: nwg::TextInput,
 
-    #[nwg_control(text: "Category 2", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 14)]
+    #[nwg_control(parent: config_window, text: "Category 2", size: (100,25), focus: false)]
+    #[nwg_layout_item(layout: config_grid, col: 2, row: 2)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_two_choose_btn: nwg::Button,
 
-    #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 14, col_span: 2)]
+    #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
+    #[nwg_layout_item(layout: config_grid, col: 0, row: 2, col_span: 2)]
     cat_two_dir_text: nwg::TextInput,
 
-    #[nwg_control(text: "Category 3", focus: false)]
-    #[nwg_layout_item(layout: grid, col: 2, row: 15)]
+    #[nwg_control(parent: config_window, text: "Category 3", size: (100,25), focus: false)]
+    #[nwg_layout_item(layout: config_grid, col: 2, row: 3)]
     #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
     cat_three_choose_btn: nwg::Button,
 
-    #[nwg_control(text: "", focus: false, readonly: true)]
-    #[nwg_layout_item(layout: grid, col: 0, row: 15, col_span: 2)]
+    #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
+    #[nwg_layout_item(layout: config_grid, col: 0, row: 3, col_span: 2)]
     cat_three_dir_text: nwg::TextInput,
-
-    #[nwg_control(text: "Open folder to load images")]
-    #[nwg_layout_item(layout: grid, col: 0, row: 16, col_span: 3)]
-    // Even though its not part of the grid I need to do this so it
-    // isnt drawn over by the category three button and textbox
-    status_bar: nwg::StatusBar,
 }
 
 impl App {
@@ -129,6 +134,15 @@ impl App {
     fn set_min(&self, data: &nwg::EventData) {
         let data = data.on_min_max();
         data.set_min_size(600, 700);
+    }
+
+    fn open_config(&self) {
+        self.config_window.set_visible(true);
+        self.config_window.set_focus();
+    }
+
+    fn close_config(&self) {
+        self.config_window.set_visible(false);
     }
 
     fn update_button_status(&self) {
@@ -153,7 +167,7 @@ impl App {
             .set_text(0, format!("Images found: {}", paths.len()).as_str())
     }
     fn undo(&self) {
-        self.window.set_focus(); //Always focus window for keydown events
+        self.main_window.set_focus(); //Always focus window for keydown events
         let mut actions = self.actions.borrow_mut();
         let mut paths = self.filenames_buffer.borrow_mut();
         if let Some(action_to_undo) = actions.pop() {
@@ -165,7 +179,7 @@ impl App {
                             .filter(|trash_item| action_to_undo.from.ends_with(&trash_item.name)),
                         Err(_) => {
                             nwg::modal_error_message(
-                                &self.window,
+                                &self.main_window,
                                 "Error",
                                 "Can't find item in recycle bin to restore",
                             );
@@ -178,7 +192,7 @@ impl App {
                         }
                         Err(_) => {
                             nwg::modal_error_message(
-                                &self.window,
+                                &self.main_window,
                                 "Error",
                                 "Can't restore item in recycle bin",
                             );
@@ -194,7 +208,7 @@ impl App {
                         }
                         Err(err) => {
                             nwg::modal_error_message(
-                                &self.window,
+                                &self.main_window,
                                 "Error",
                                 format!("Could not move image {} !", err).as_str(),
                             );
@@ -218,7 +232,7 @@ impl App {
                 Some(path) => path,
                 None => {
                     nwg::modal_error_message(
-                        &self.window,
+                        &self.main_window,
                         "Error",
                         "Vector empty after check (Shouldn't happen)",
                     );
@@ -231,7 +245,7 @@ impl App {
             let image = match self.decoder.from_filename(path) {
                 Ok(img) => img,
                 Err(_) => {
-                    nwg::modal_error_message(&self.window, "Error", "Could not read image!");
+                    nwg::modal_error_message(&self.main_window, "Error", "Could not read image!");
                     return;
                 }
             };
@@ -239,7 +253,11 @@ impl App {
             let mut image_frame = match image.frame(0) {
                 Ok(bmp) => bmp,
                 Err(_) => {
-                    nwg::modal_error_message(&self.window, "Error", "Could not read image frame!");
+                    nwg::modal_error_message(
+                        &self.main_window,
+                        "Error",
+                        "Could not read image frame!",
+                    );
                     return;
                 }
             };
@@ -275,7 +293,7 @@ impl App {
                 Ok(frame) => frame,
                 Err(_) => {
                     nwg::modal_error_message(
-                        &self.window,
+                        &self.main_window,
                         "Error",
                         "Could not resize image frame!",
                     );
@@ -291,7 +309,7 @@ impl App {
                 }
                 Err(_) => {
                     nwg::modal_error_message(
-                        &self.window,
+                        &self.main_window,
                         "Error",
                         "Could not convert image to bitmap!",
                     );
@@ -304,7 +322,7 @@ impl App {
         }
     }
     fn open_folder(&self, ctrl: &Button) {
-        self.window.set_focus(); //Always focus window for keydown events
+        self.main_window.set_focus(); //Always focus window for keydown events
 
         // See which text box to update with the new path
         let btn_text = ctrl.text();
@@ -336,7 +354,7 @@ impl App {
         }
 
         // Open the file dialog
-        if !self.folder_select.run(Some(&self.window)) {
+        if !self.folder_select.run(Some(&self.main_window)) {
             return;
         }
         let path = self
@@ -367,7 +385,7 @@ impl App {
     }
 
     fn delete_file(&self) {
-        self.window.set_focus(); //Always focus window for keydown events
+        self.main_window.set_focus(); //Always focus window for keydown events
         let mut paths = self.filenames_buffer.borrow_mut();
         let path_of_file = paths.swap_remove(0);
         let mut actions = self.actions.borrow_mut();
@@ -382,7 +400,7 @@ impl App {
             }
             Err(err) => {
                 nwg::modal_error_message(
-                    &self.window,
+                    &self.main_window,
                     "Error",
                     format!("Could not delete image {} !", err).as_str(),
                 );
@@ -396,7 +414,7 @@ impl App {
     }
 
     fn move_file(&self, ctrl: &Button) {
-        self.window.set_focus(); //Always focus window for keydown events
+        self.main_window.set_focus(); //Always focus window for keydown events
         let mut paths = self.filenames_buffer.borrow_mut();
         let btn_text = ctrl.text();
         let path_of_file = paths.swap_remove(0);
@@ -431,7 +449,7 @@ impl App {
             }
             Err(err) => {
                 nwg::modal_error_message(
-                    &self.window,
+                    &self.main_window,
                     "Error",
                     format!("Could not move image {} !", err).as_str(),
                 );
