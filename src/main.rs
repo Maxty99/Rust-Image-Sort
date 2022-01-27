@@ -478,7 +478,7 @@ impl App {
         if (data.on_key() == nwg::keys::DELETE || data.on_key() == nwg::keys::_S)
             && self.delete_btn.enabled()
         {
-            self.undo_btn.click();
+            self.delete_btn.click();
         }
     }
 }
