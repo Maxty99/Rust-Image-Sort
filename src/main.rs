@@ -3,6 +3,7 @@
 use std::cell::RefCell;
 use std::env;
 
+use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
 
@@ -91,8 +92,8 @@ pub struct App {
 
     #[nwg_control(parent: config_window, text: "Pictures", size: (100,25), focus: false)]
     #[nwg_layout_item(layout: config_grid, col: 2, row: 0)]
-    #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
-    open_btn: nwg::Button,
+    #[nwg_events( OnButtonClick: [App::open_pictures_folder])]
+    open_pictures_btn: nwg::Button,
 
     #[nwg_control(parent: config_window,text: "", focus: false, size: (100,25), readonly: true)]
     #[nwg_layout_item(layout: config_grid, col: 0, row: 0, col_span: 2)]
@@ -100,7 +101,7 @@ pub struct App {
 
     #[nwg_control(parent: config_window, text: "Category 1", size: (100,25), focus: false)]
     #[nwg_layout_item(layout: config_grid, col: 2, row: 1)]
-    #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::open_cat_one_folder])]
     cat_one_choose_btn: nwg::Button,
 
     #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
@@ -109,7 +110,7 @@ pub struct App {
 
     #[nwg_control(parent: config_window, text: "Category 2", size: (100,25), focus: false)]
     #[nwg_layout_item(layout: config_grid, col: 2, row: 2)]
-    #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::open_cat_two_folder])]
     cat_two_choose_btn: nwg::Button,
 
     #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
@@ -118,7 +119,7 @@ pub struct App {
 
     #[nwg_control(parent: config_window, text: "Category 3", size: (100,25), focus: false)]
     #[nwg_layout_item(layout: config_grid, col: 2, row: 3)]
-    #[nwg_events( OnButtonClick: [App::open_folder(SELF, CTRL)])]
+    #[nwg_events( OnButtonClick: [App::open_cat_three_folder])]
     cat_three_choose_btn: nwg::Button,
 
     #[nwg_control(parent: config_window, text: "", focus: false, size: (100,25), readonly: true)]
@@ -321,29 +322,8 @@ impl App {
             self.img_frame_ui.set_bitmap(img.as_ref());
         }
     }
-    fn open_folder(&self, ctrl: &Button) {
+    fn open_folder(&self) -> Option<OsString> {
         self.main_window.set_focus(); //Always focus window for keydown events
-
-        // See which text box to update with the new path
-        let btn_text = ctrl.text();
-        let text_feild: &nwg::TextInput;
-        let mut process_pictures: bool = false;
-        match btn_text.as_str() {
-            "Pictures" => {
-                text_feild = &self.open_dir_text;
-                process_pictures = true;
-            }
-            "Category 1" => {
-                text_feild = &self.cat_one_dir_text;
-            }
-            "Category 2" => {
-                text_feild = &self.cat_two_dir_text;
-            }
-            "Category 3" => {
-                text_feild = &self.cat_three_dir_text;
-            }
-            _ => panic!("This should not happen, match statement error"),
-        }
 
         if let Ok(d) = env::current_dir() {
             if let Some(d) = d.to_str() {
@@ -355,15 +335,32 @@ impl App {
 
         // Open the file dialog
         if !self.folder_select.run(Some(&self.main_window)) {
-            return;
+            return None;
         }
         let path = self
             .folder_select
             .get_selected_item()
             .expect("System error occured"); //TODO Modal Error
 
-        text_feild.set_text(path.to_str().expect("Path isn't valid unicode")); //TODO Modal Error
-        if process_pictures {
+        Some(path)
+    }
+
+    fn open_pictures_folder(&self) {
+        if let Some(path) = self.open_folder() {
+            let text = match path.to_str() {
+                Some(path_str) => path_str,
+                _ => {
+                    nwg::modal_error_message(
+                        &self.main_window,
+                        "Error",
+                        "Path has invalid Unicode!",
+                    );
+                    return;
+                }
+            };
+
+            self.open_dir_text.set_text(text);
+
             let paths = fs::read_dir(path).expect("Not enough permissions"); //Expects not enough permissions
 
             let names = paths
@@ -380,6 +377,59 @@ impl App {
             self.filenames_buffer.replace(names);
             self.upate_img();
             self.update_img_count();
+
+            self.update_button_status();
+        }
+    }
+
+    fn open_cat_one_folder(&self) {
+        if let Some(path) = self.open_folder() {
+            let text = match path.to_str() {
+                Some(path_str) => path_str,
+                _ => {
+                    nwg::modal_error_message(
+                        &self.main_window,
+                        "Error",
+                        "Path has invalid Unicode!",
+                    );
+                    return;
+                }
+            };
+            self.cat_one_dir_text.set_text(text);
+        }
+        self.update_button_status();
+    }
+    fn open_cat_two_folder(&self) {
+        if let Some(path) = self.open_folder() {
+            let text = match path.to_str() {
+                Some(path_str) => path_str,
+                _ => {
+                    nwg::modal_error_message(
+                        &self.main_window,
+                        "Error",
+                        "Path has invalid Unicode!",
+                    );
+                    return;
+                }
+            };
+            self.cat_two_dir_text.set_text(text);
+        }
+        self.update_button_status();
+    }
+    fn open_cat_three_folder(&self) {
+        if let Some(path) = self.open_folder() {
+            let text = match path.to_str() {
+                Some(path_str) => path_str,
+                _ => {
+                    nwg::modal_error_message(
+                        &self.main_window,
+                        "Error",
+                        "Path has invalid Unicode!",
+                    );
+                    return;
+                }
+            };
+            self.cat_three_dir_text.set_text(text);
         }
         self.update_button_status();
     }
