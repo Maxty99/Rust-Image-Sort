@@ -361,7 +361,7 @@ impl App {
 
             self.open_dir_text.set_text(text);
 
-            let paths = fs::read_dir(path).expect("Not enough permissions"); //Expects not enough permissions
+            let paths = fs::read_dir(path).expect("Not enough permissions");
 
             let names = paths
                 .filter_map(|entry| {
