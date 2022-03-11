@@ -3,9 +3,9 @@
 use std::cell::RefCell;
 use std::env;
 
-use std::ffi::OsString;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 
 use native_windows_derive as nwd;
 use native_windows_gui as nwg;
@@ -32,6 +32,14 @@ pub struct App {
     loaded_image: RefCell<Option<nwg::Bitmap>>,
 
     actions: RefCell<Vec<Action>>,
+
+    open_folder_os_path: RefCell<PathBuf>,
+
+    cat_one_os_path: RefCell<PathBuf>,
+
+    cat_two_os_path: RefCell<PathBuf>,
+
+    cat_three_os_path: RefCell<PathBuf>,
 
     #[nwg_control(flags: "MAIN_WINDOW|VISIBLE", title: "Image Sort", size: (1000,700), center: true)]
     #[nwg_events(OnMinMaxInfo: [App::set_min(SELF, EVT_DATA)], OnResize: [App::upate_img], OnWindowClose: [App::exit], OnKeyPress: [App::process_keypress(SELF, EVT_DATA)], OnInit: [App::update_button_status])]
@@ -322,7 +330,7 @@ impl App {
             self.img_frame_ui.set_bitmap(img.as_ref());
         }
     }
-    fn open_folder(&self) -> Option<OsString> {
+    fn open_folder(&self) -> Option<PathBuf> {
         self.main_window.set_focus(); //Always focus window for keydown events
 
         if let Ok(d) = env::current_dir() {
@@ -342,27 +350,18 @@ impl App {
             .get_selected_item()
             .expect("System error occured"); //TODO Modal Error
 
-        Some(path)
+        Some(PathBuf::from(path))
     }
 
     fn open_pictures_folder(&self) {
         if let Some(path) = self.open_folder() {
-            let text = match path.to_str() {
-                Some(path_str) => path_str,
-                _ => {
-                    nwg::modal_error_message(
-                        &self.main_window,
-                        "Error",
-                        "Path has invalid Unicode!",
-                    );
-                    return;
-                }
-            };
+            let text = path.to_string_lossy();
 
-            self.open_dir_text.set_text(text);
+            self.open_dir_text.set_text(&text);
 
-            let paths = fs::read_dir(path).expect("Not enough permissions");
+            let paths = fs::read_dir(&path).expect("Not enough permissions");
 
+            self.open_folder_os_path.replace(path);
             let names = paths
                 .filter_map(|entry| {
                     // Skips non files
@@ -384,52 +383,25 @@ impl App {
 
     fn open_cat_one_folder(&self) {
         if let Some(path) = self.open_folder() {
-            let text = match path.to_str() {
-                Some(path_str) => path_str,
-                _ => {
-                    nwg::modal_error_message(
-                        &self.main_window,
-                        "Error",
-                        "Path has invalid Unicode!",
-                    );
-                    return;
-                }
-            };
-            self.cat_one_dir_text.set_text(text);
+            let text = path.to_string_lossy();
+            self.cat_one_dir_text.set_text(&text);
+            self.cat_one_os_path.replace(path);
         }
         self.update_button_status();
     }
     fn open_cat_two_folder(&self) {
         if let Some(path) = self.open_folder() {
-            let text = match path.to_str() {
-                Some(path_str) => path_str,
-                _ => {
-                    nwg::modal_error_message(
-                        &self.main_window,
-                        "Error",
-                        "Path has invalid Unicode!",
-                    );
-                    return;
-                }
-            };
-            self.cat_two_dir_text.set_text(text);
+            let text = path.to_string_lossy();
+            self.cat_two_dir_text.set_text(&text);
+            self.cat_two_os_path.replace(path);
         }
         self.update_button_status();
     }
     fn open_cat_three_folder(&self) {
         if let Some(path) = self.open_folder() {
-            let text = match path.to_str() {
-                Some(path_str) => path_str,
-                _ => {
-                    nwg::modal_error_message(
-                        &self.main_window,
-                        "Error",
-                        "Path has invalid Unicode!",
-                    );
-                    return;
-                }
-            };
-            self.cat_three_dir_text.set_text(text);
+            let text = path.to_string_lossy();
+            self.cat_three_dir_text.set_text(&text);
+            self.cat_three_os_path.replace(path);
         }
         self.update_button_status();
     }
